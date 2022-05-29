@@ -1,0 +1,6 @@
+[submodule "demo/1-one-cluster-to-rule-them-all/infra/kuberay"]
+	path = demo/1-one-cluster-to-rule-them-all/infra/kuberay
+	url = https://github.com/ray-project/kuberay.git
+[submodule "demo/1-one-cluster-to-rule-them-all/infra/ray"]
+	path = demo/1-one-cluster-to-rule-them-all/infra/ray
+	url = https://github.com/ray-project/ray.git
