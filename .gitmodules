@@ -4,3 +4,6 @@
 [submodule "demo/1-one-cluster-to-rule-them-all/infra/ray"]
 	path = demo/1-one-cluster-to-rule-them-all/infra/ray
 	url = https://github.com/ray-project/ray.git
+[submodule "demo/1-one-cluster-to-rule-them-all/ray"]
+	path = demo/1-one-cluster-to-rule-them-all/ray
+	url = https://github.com/ray-project/ray.git

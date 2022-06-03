@@ -1,16 +1,14 @@
 locals {
-  name              = "mlops-world-22-demo"
-  cluster_version   = "1.22"
-  region            = "us-east-1"
-  vpc_cidr          = "10.0.0.0/16"
-  karpenter_version = "0.10.1"
-  ray_version       = "1.12.1-py38"
+  name     = "mlops-world-22-demo"
+  region   = "us-east-1"
+  vpc_cidr = "10.0.0.0/16"
+
+  eks_cluster_version = "1.22"
+  karpenter_version   = "0.10.1"
+  ray_version         = "1.12.1-py38"
 
   tags = {
     Name = local.name
-    # Example = local.name
-    # GithubRepo = "terraform-aws-eks"
-    # GithubOrg  = "terraform-aws-modules"
   }
 }
 
@@ -77,7 +75,7 @@ module "eks" {
   version = "~> 18.21"
 
   cluster_name                    = local.name
-  cluster_version                 = local.cluster_version
+  cluster_version                 = local.eks_cluster_version
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access  = true
 
@@ -120,7 +118,7 @@ module "eks" {
 }
 
 ################################################################################
-# Karpenter
+# Helm and Kubectl Providers
 ################################################################################
 
 provider "helm" {
@@ -129,7 +127,7 @@ provider "helm" {
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
 
     exec {
-      api_version = "client.authentication.k8s.io/v1alpha1"
+      api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
       # This requires the awscli to be installed locally where Terraform is executed
       args = ["eks", "get-token", "--cluster-name", module.eks.cluster_id]
@@ -144,12 +142,16 @@ provider "kubectl" {
   load_config_file       = false
 
   exec {
-    api_version = "client.authentication.k8s.io/v1alpha1"
+    api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
     # This requires the awscli to be installed locally where Terraform is executed
     args = ["eks", "get-token", "--cluster-name", module.eks.cluster_id]
   }
 }
+
+################################################################################
+# Karpenter
+################################################################################
 
 module "karpenter_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -209,15 +211,15 @@ resource "helm_release" "karpenter" {
   }
 }
 
-data "kubectl_path_documents" "karpenter" {
-  pattern = "${path.module}/manifests/karpenter.yaml"
+data "kubectl_path_documents" "karpenter_provisioners" {
+  pattern = "${path.module}/manifests/karpenter-provisioners.yaml"
   vars = {
     name = local.name
   }
 }
 
-resource "kubectl_manifest" "karpenter" {
-  for_each  = toset(data.kubectl_path_documents.karpenter.documents)
+resource "kubectl_manifest" "karpenter_provisioners" {
+  for_each  = toset(data.kubectl_path_documents.karpenter_provisioners.documents)
   yaml_body = each.value
 
   depends_on = [
@@ -230,26 +232,21 @@ resource "kubectl_manifest" "karpenter" {
 ################################################################################
 
 resource "helm_release" "ray" {
-  # Use the same namespace as karpenter to make use of karpenter's node autoscaling
+  # Use the same namespace as karpenter to make use of karpenter's provisioners
   namespace = helm_release.karpenter.namespace
 
   name  = "ray"
   chart = "${path.module}/ray/deploy/charts/ray"
 
-  set {
-    name  = "image"
-    value = "rayproject/ray:${local.ray_version}"
-  }
-
-  set {
-    name  = "operatorNamespace"
-    value = helm_release.karpenter.namespace
-  }
-
-  set {
-    name  = "operatorImage"
-    value = "rayproject/ray:${local.ray_version}"
-  }
+  values = [
+    yamlencode({
+      image             = "rayproject/ray:${local.ray_version}"
+      operatorImage     = "rayproject/ray:${local.ray_version}"
+      operatorNamespace = helm_release.karpenter.namespace
+      headPodType       = local.head_type_name
+      podTypes          = local.ray_pod_types
+    })
+  ]
 
   depends_on = [
     helm_release.karpenter
