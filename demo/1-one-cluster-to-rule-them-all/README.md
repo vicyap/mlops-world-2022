@@ -68,6 +68,7 @@ Because Karpenter manages the state of node resources outside of Terraform,
 Karpenter created resources will need to be de-provisioned first before
 removing the remaining resources with Terraform.
 ```
+kubectl patch rayclusters/ray -p '{"metadata":{"finalizers":[]}}' --type=merge
 helm uninstall ray
 helm uninstall karpenter
 kubectl delete po -n karpenter -l ray-cluster-name=ray

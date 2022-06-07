@@ -38,20 +38,14 @@ locals {
     {
       minWorkers = 1
       maxWorkers = 100
-      CPU        = 7
-      memory     = "14G"
-    },
-    {
-      minWorkers = 0
-      maxWorkers = 10
-      CPU        = 30
-      memory     = "60G"
+      CPU        = 1
+      memory     = "2G"
     },
     {
       minWorkers = 0
       maxWorkers = 1
-      CPU        = 60
-      memory     = "500G"
+      CPU        = 8
+      memory     = "60G"
     },
   ]
 
@@ -63,8 +57,16 @@ locals {
     {
       minWorkers      = 0
       maxWorkers      = 1
-      CPU             = 7
-      memory          = "472G"
+      CPU             = 3
+      memory          = "56G"
+      GPU             = 1
+      acceleratorType = "p2"
+    },
+    {
+      minWorkers      = 0
+      maxWorkers      = 1
+      CPU             = 30
+      memory          = "480G"
       GPU             = 8
       acceleratorType = "p2"
     },
@@ -103,8 +105,8 @@ locals {
         "accelerator_type:${wkr.acceleratorType}" : 1
       }
       nodeSelector = {
-        "karpenter.sh/capcity-type" = "on-demand"
-        "mydomain.com/gpu-type"     = wkr.acceleratorType
+        "karpenter.sh/capacity-type" = "on-demand"
+        "mydomain.com/gpu-type"      = wkr.acceleratorType
       }
       tolerations = [
         {

@@ -47,12 +47,11 @@ metadata:
   name: gpu
 spec:
   requirements:
-    - key: node.kubernets.io/instance-type
+    - key: node.kubernetes.io/instance-type
       operator: In
       values: [
         "p2.xlarge",
         "p2.8xlarge",
-        "p2.16xlarge",
       ]
     - key: karpenter.sh/capacity-type
       operator: In
