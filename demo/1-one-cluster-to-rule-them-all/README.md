@@ -64,6 +64,11 @@ kubectl -n karpenter port-forward service/ray-ray-head 10001:10001
 
 ### Destroy
 
+Cleanly remove a node:
+```
+kubectl drain no/${node-id} --delete-emptydir-data --ignore-daemonsets
+```
+
 Because Karpenter manages the state of node resources outside of Terraform,
 Karpenter created resources will need to be de-provisioned first before
 removing the remaining resources with Terraform.
@@ -84,41 +89,3 @@ Remove the resources created by Terraform
 terraform destroy -auto-approve
 ```
 
-## Demo
-
-### Setup Watch
-
-Setup some `watch` terminals to view the system in action.
-
-Watch pods -- as Ray receives resource requests, it will create worker pods to
-serve those requests.
-```
-watch kubectl get po -n karpenter
-```
-
-Watch nodes -- when Ray creates pending pods, Karpenter will find just the
-right instance types for those pods.
-```
-watch kubectl get no -L node.kubernetes.io/instance-type,karpenter.sh/capacity-type
-```
-
-Watch Karpenter's logs -- we can view when Karpenter decides to create nodes
-and when it decides to delete nodes. As Ray scales down, it will remove its
-worker pods. As nodes become empty and idle, Karpenter will delete them.
-```
-kubectl logs -f -l app.kubernetes.io/name=karpenter -c controller
-```
-
-### Run Demo
-
-Install `requirements.txt`.
-```
-pip install -r requirements.txt
-```
-
-Run the demo script:
-```
-python ray_demo.py
-```
-
-### Expected Behavior

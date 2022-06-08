@@ -37,15 +37,15 @@ locals {
   cpu_worker_types = [
     {
       minWorkers = 1
-      maxWorkers = 100
-      CPU        = 1
-      memory     = "2G"
+      maxWorkers = 250
+      CPU        = 4
+      memory     = "8G"
     },
     {
       minWorkers = 0
       maxWorkers = 1
-      CPU        = 8
-      memory     = "60G"
+      CPU        = 30
+      memory     = "250G"
     },
   ]
 
